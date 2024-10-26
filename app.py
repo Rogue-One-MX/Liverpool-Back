@@ -1,7 +1,10 @@
 """Main Flask application."""
 
+from io import BytesIO
 from flask import Flask, request, jsonify
+from PIL import Image
 from dotenv import load_dotenv
+import requests
 from ai import preprocesar_imagen, obtener_embedding, index
 
 load_dotenv()
@@ -18,11 +21,19 @@ def home():
 @app.route("/find-similar", methods=["POST"])
 def find_similar():
     """Encuentra la imagen más similar en el índice Pinecone."""
-    if "file" not in request.files:
-        return jsonify({"error": "No file provided"}), 400
+    # Check if the "image_url" field is in the JSON body
+    data = request.get_json()
+    if not data or "image_url" not in data:
+        return jsonify({"error": "No image URL provided"}), 400
 
-    file = request.files["file"]
-    image_data = file.read()
+    image_url = data["image_url"]
+
+    try:
+        response = requests.get(image_url)
+        response.raise_for_status()
+        image_data = response.content
+    except requests.RequestException as e:
+        return jsonify({"error": f"Failed to download image: {e}"}), 500
 
     preprocessed_image = preprocesar_imagen(image_data)
     if not preprocessed_image:

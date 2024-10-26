@@ -26,13 +26,20 @@ index = pc.Index(index_name)
 
 
 def preprocesar_imagen(img_data, size=(224, 224)):
-    """Redimensiona la imagen a un tamaño uniforme."""
+    """Preprocesses an image by resizing it to a uniform size."""
     try:
-        img = Image.open(io.BytesIO(img_data)).convert("RGB")
+        if isinstance(img_data, bytes):
+            img = Image.open(io.BytesIO(img_data)).convert("RGB")
+        elif isinstance(img_data, Image.Image):
+            img = img_data.convert("RGB")
+        else:
+            raise ValueError("Invalid input: Expected bytes or an Image object.")
+
+        # Resize the image
         img = img.resize(size)
         return img
     except Exception as e:
-        raise RuntimeError(f"Error procesando imagen: {e}") from e
+        raise RuntimeError(f"Error processing image: {e}") from e
 
 
 def obtener_embedding(imagen):
